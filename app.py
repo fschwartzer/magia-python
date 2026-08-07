@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import base64
 import hashlib
 import json
@@ -16,7 +17,7 @@ from motor_magia.runtime import RuntimeSession
 
 
 BASE_DIR = Path(__file__).resolve().parent
-APP_VERSION = 1
+APP_VERSION = 2
 
 
 def setup_page() -> None:
@@ -71,13 +72,58 @@ def setup_page() -> None:
                 linear-gradient(180deg, #292452 0%, #49306d 100%);
         }
 
-        [data-testid="stSidebar"] * { color: #fffdf3 !important; }
-        [data-testid="stSidebar"] [data-baseweb="select"] > div,
+        [data-testid="stSidebar"] { color: #fffdf3; }
+        [data-testid="stSidebar"] p,
+        [data-testid="stSidebar"] label,
+        [data-testid="stSidebar"] h1,
+        [data-testid="stSidebar"] h2,
+        [data-testid="stSidebar"] h3,
+        [data-testid="stSidebar"] h4,
+        [data-testid="stSidebar"] .magic-brand strong,
+        [data-testid="stSidebar"] .magic-brand small {
+            color: #fffdf3 !important;
+        }
         [data-testid="stSidebar"] textarea,
         [data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] {
             background: rgba(255, 255, 255, .11) !important;
             border: 0 !important;
             border-radius: 18px !important;
+        }
+
+        /* O seletor precisa continuar legível mesmo quando o tema do navegador
+           ou do Streamlit não coincide com o tema visual do aplicativo. */
+        [data-testid="stSidebar"] [data-baseweb="select"] > div {
+            background: #fffdf3 !important;
+            border: 2px solid #d8cfbd !important;
+            border-radius: 14px !important;
+        }
+        [data-testid="stSidebar"] [data-baseweb="select"] > div *,
+        [data-testid="stSidebar"] [data-baseweb="select"] svg {
+            color: #232044 !important;
+            fill: #232044 !important;
+            opacity: 1 !important;
+        }
+        [data-testid="stSidebar"] [data-baseweb="select"] input,
+        [data-testid="stSidebar"] [data-baseweb="select"] [role="combobox"] {
+            color: #232044 !important;
+            -webkit-text-fill-color: #232044 !important;
+            opacity: 1 !important;
+        }
+        [data-baseweb="popover"] [role="listbox"] {
+            background: #fffdf3 !important;
+            border: 2px solid #d8cfbd !important;
+        }
+        [data-baseweb="popover"] [role="option"] {
+            background: #fffdf3 !important;
+            color: #232044 !important;
+        }
+        [data-baseweb="popover"] [role="option"] * {
+            color: #232044 !important;
+        }
+        [data-baseweb="popover"] [role="option"]:hover,
+        [data-baseweb="popover"] [aria-selected="true"] {
+            background: #ead7f8 !important;
+            color: #321245 !important;
         }
 
         [data-testid="stSidebar"] [data-testid="stProgressBar"] > div > div {
@@ -179,6 +225,16 @@ def setup_page() -> None:
         }
         .stTextArea textarea:focus { box-shadow: 0 0 0 3px rgba(126,51,174,.22) !important; }
 
+        .stTextInput input {
+            background: #fffdf3 !important;
+            color: #232044 !important;
+            border: 2px solid #d8cfbd !important;
+            border-radius: 14px !important;
+            caret-color: #232044 !important;
+        }
+        .stTextInput input::placeholder { color: #716b61 !important; opacity: 1 !important; }
+        .stTextInput input:focus { border-color: var(--purple) !important; }
+
         .stButton > button, .stDownloadButton > button {
             border: 0 !important;
             border-radius: 999px !important;
@@ -243,12 +299,73 @@ def load_lessons() -> list[Lesson]:
     return deserialize_lessons(load_lesson_payload())
 
 
+def code_cell_ids(lesson: Lesson) -> list[str]:
+    return [cell.cell_id for cell in lesson.cells if cell.cell_type == "code"]
+
+
+def progress_summary(lessons: list[Lesson]) -> tuple[int, int, int, float]:
+    completed_cells = st.session_state["completed_cells"]
+    valid_code_ids = {
+        cell_id
+        for lesson in lessons
+        for cell_id in code_cell_ids(lesson)
+    }
+    completed_spells = sum(bool(completed_cells.get(cell_id, False)) for cell_id in valid_code_ids)
+    total_spells = len(valid_code_ids)
+    completed_lessons = sum(
+        bool(st.session_state["lesson_status"].get(lesson.lesson_id, False))
+        for lesson in lessons
+    )
+    ratio = completed_spells / total_spells if total_spells else 0.0
+    return completed_lessons, completed_spells, total_spells, ratio
+
+
+def input_prompts(code: str) -> tuple[list[str], bool]:
+    """Return input() labels in execution order and whether one may repeat in a loop."""
+
+    prompts: list[str] = []
+    has_repeating_input = False
+
+    class InputVisitor(ast.NodeVisitor):
+        def __init__(self) -> None:
+            self.loop_depth = 0
+
+        def visit_For(self, node: ast.For) -> None:  # noqa: N802 - API do ast
+            self.loop_depth += 1
+            self.generic_visit(node)
+            self.loop_depth -= 1
+
+        def visit_While(self, node: ast.While) -> None:  # noqa: N802 - API do ast
+            self.loop_depth += 1
+            self.generic_visit(node)
+            self.loop_depth -= 1
+
+        def visit_Call(self, node: ast.Call) -> None:  # noqa: N802 - API do ast
+            nonlocal has_repeating_input
+            if isinstance(node.func, ast.Name) and node.func.id == "input":
+                prompt = ""
+                if node.args and isinstance(node.args[0], ast.Constant):
+                    prompt = str(node.args[0].value)
+                prompt = prompt.strip().rstrip(":").strip()
+                prompts.append(prompt or f"Resposta {len(prompts) + 1}")
+                has_repeating_input = has_repeating_input or self.loop_depth > 0
+            self.generic_visit(node)
+
+    try:
+        InputVisitor().visit(ast.parse(code))
+    except SyntaxError:
+        if "input(" in code:
+            prompts.append("Resposta")
+    return prompts, has_repeating_input
+
+
 def bootstrap_session_state(lessons: list[Lesson]) -> None:
     first_lesson_id = lessons[0].lesson_id
     defaults: dict[str, Any] = {
         "runtime": RuntimeSession,
         "notes": dict,
         "lesson_status": dict,
+        "completed_cells": dict,
         "selected_lesson_id": lambda: first_lesson_id,
         "import_digest": lambda: "",
         "flash_message": lambda: "",
@@ -274,11 +391,12 @@ def progress_document() -> dict[str, Any]:
         "exported_at": datetime.now().isoformat(sep=" ", timespec="seconds"),
         "notes": dict(st.session_state["notes"]),
         "lesson_status": dict(st.session_state["lesson_status"]),
+        "completed_cells": dict(st.session_state["completed_cells"]),
         "lesson_history": list(runtime.lesson_history[-MAX_HISTORY_ITEMS:]),
     }
 
 
-def import_progress(raw: bytes, valid_lesson_ids: set[str]) -> None:
+def import_progress(raw: bytes, lessons: list[Lesson]) -> None:
     if len(raw) > 1_000_000:
         raise ValueError("O arquivo de progresso deve ter no máximo 1 MB.")
     try:
@@ -289,6 +407,12 @@ def import_progress(raw: bytes, valid_lesson_ids: set[str]) -> None:
         raise ValueError("O arquivo de progresso precisa conter um objeto JSON.")
 
     progress = ProgressState.from_dict(data)
+    valid_lesson_ids = {lesson.lesson_id for lesson in lessons}
+    valid_cell_ids = {
+        cell_id
+        for lesson in lessons
+        for cell_id in code_cell_ids(lesson)
+    }
     st.session_state["notes"] = {
         lesson_id: note[:10_000]
         for lesson_id, note in progress.notes.items()
@@ -299,6 +423,17 @@ def import_progress(raw: bytes, valid_lesson_ids: set[str]) -> None:
         for lesson_id, completed in progress.lesson_status.items()
         if lesson_id in valid_lesson_ids
     }
+    st.session_state["completed_cells"] = {
+        cell_id: completed
+        for cell_id, completed in progress.completed_cells.items()
+        if cell_id in valid_cell_ids
+    }
+    # Arquivos da versão anterior não registravam células individualmente.
+    # Uma aula já concluída continua concluída após a importação.
+    for lesson in lessons:
+        if st.session_state["lesson_status"].get(lesson.lesson_id, False):
+            for cell_id in code_cell_ids(lesson):
+                st.session_state["completed_cells"][cell_id] = True
     runtime: RuntimeSession = st.session_state["runtime"]
     runtime.lesson_history = progress.lesson_history[-MAX_HISTORY_ITEMS:]
     for key in list(st.session_state):
@@ -306,12 +441,36 @@ def import_progress(raw: bytes, valid_lesson_ids: set[str]) -> None:
             del st.session_state[key]
 
 
-def toggle_lesson(lesson_id: str, total_lessons: int) -> None:
+def toggle_lesson(lesson_id: str, lesson_cell_ids: list[str], total_lessons: int) -> None:
     current = bool(st.session_state["lesson_status"].get(lesson_id, False))
     st.session_state["lesson_status"][lesson_id] = not current
+    for cell_id in lesson_cell_ids:
+        st.session_state["completed_cells"][cell_id] = not current
     completed = sum(bool(value) for value in st.session_state["lesson_status"].values())
     if not current and completed >= total_lessons:
         st.session_state["celebrate"] = True
+
+
+def register_successful_cell(lesson: Lesson, cell_id: str, total_lessons: int) -> bool:
+    """Record a successful laboratory and complete its lesson automatically."""
+
+    changed = not bool(st.session_state["completed_cells"].get(cell_id, False))
+    st.session_state["completed_cells"][cell_id] = True
+    lesson_cells = code_cell_ids(lesson)
+    lesson_completed = bool(lesson_cells) and all(
+        st.session_state["completed_cells"].get(item, False) for item in lesson_cells
+    )
+    was_completed = bool(st.session_state["lesson_status"].get(lesson.lesson_id, False))
+    if lesson_completed and not was_completed:
+        st.session_state["lesson_status"][lesson.lesson_id] = True
+        st.session_state["flash_message"] = (
+            f"Aula {lesson.order} concluída automaticamente: todos os feitiços funcionaram!"
+        )
+        completed_lessons = sum(bool(value) for value in st.session_state["lesson_status"].values())
+        if completed_lessons >= total_lessons:
+            st.session_state["celebrate"] = True
+        changed = True
+    return changed
 
 
 def select_lesson(lesson_id: str) -> None:
@@ -346,14 +505,11 @@ def render_output(runtime: RuntimeSession, cell_id: str) -> None:
         st.caption(f"Executado em {output.get('executed_at', '')}")
 
 
-def render_code_cell(lesson: Lesson, cell: Any) -> None:
+def render_code_cell(lesson: Lesson, cell: Any, total_lessons: int) -> None:
     runtime: RuntimeSession = st.session_state["runtime"]
     code_key = f"code::{cell.cell_id}"
-    input_key = f"inputs::{cell.cell_id}"
     if code_key not in st.session_state:
         st.session_state[code_key] = cell.default_code or cell.source
-    if input_key not in st.session_state:
-        st.session_state[input_key] = ""
 
     with st.container(border=True):
         st.markdown(
@@ -368,16 +524,33 @@ def render_code_cell(lesson: Lesson, cell: Any) -> None:
             label_visibility="collapsed",
         )
 
-        if cell.requires_input or "input(" in code:
-            st.caption("Cada linha abaixo responde a uma chamada de `input()`, na ordem das perguntas.")
-            raw_inputs = st.text_area(
-                "Entradas do usuário",
-                key=input_key,
-                height=95,
-                placeholder="Uma resposta por linha\nExemplo: Luna\ndragão\n3",
-            )
-        else:
-            raw_inputs = st.session_state[input_key]
+        prompts, has_repeating_input = input_prompts(code)
+        answers: list[str] = []
+        if prompts:
+            st.markdown("**Responda às perguntas do programa**")
+            st.caption("Digite somente a resposta em cada caixa. A pergunta já está indicada no rótulo.")
+            for prompt_index, prompt in enumerate(prompts, start=1):
+                label = prompt if len(prompts) == 1 else f"{prompt_index}. {prompt}"
+                answers.append(
+                    st.text_input(
+                        label,
+                        key=f"input::{cell.cell_id}::{prompt_index}",
+                        placeholder="Digite sua resposta aqui",
+                    )
+                )
+            if has_repeating_input:
+                st.caption(
+                    "Este programa pode repetir a mesma pergunta. Se necessário, informe abaixo "
+                    "as próximas respostas, uma por linha."
+                )
+                extra_answers = st.text_area(
+                    "Respostas seguintes (opcional)",
+                    key=f"input_extra::{cell.cell_id}",
+                    height=90,
+                    placeholder="Uma nova resposta por linha",
+                )
+                answers.extend(extra_answers.splitlines())
+        raw_inputs = "\n".join(answers)
 
         run_col, restore_col, clear_col = st.columns([1.45, 1, 1])
         run_clicked = run_col.button(
@@ -398,27 +571,33 @@ def render_code_cell(lesson: Lesson, cell: Any) -> None:
 
         if run_clicked:
             with st.spinner("Misturando o feitiço no caldeirão seguro..."):
-                runtime.execute(
+                result = runtime.execute(
                     code=code,
                     lesson_id=lesson.lesson_id,
                     lesson_title=lesson.title,
                     cell_id=cell.cell_id,
                     raw_inputs=raw_inputs,
                 )
+            if not result.get("error") and register_successful_cell(
+                lesson, cell.cell_id, total_lessons
+            ):
+                # O menu lateral é renderizado antes dos laboratórios. O novo
+                # ciclo ocorre ao fim da página, depois que os demais widgets
+                # tiveram seu estado preservado.
+                st.session_state["refresh_progress"] = True
         render_output(runtime, cell.cell_id)
 
 
-def render_lesson(lesson: Lesson) -> None:
+def render_lesson(lesson: Lesson, total_lessons: int) -> None:
     for cell in lesson.cells:
         if cell.cell_type == "markdown":
             st.markdown(cell.source)
         elif cell.cell_type == "code":
-            render_code_cell(lesson, cell)
+            render_code_cell(lesson, cell, total_lessons)
 
 
 def render_sidebar(lessons: list[Lesson]) -> Lesson:
     lesson_by_id = {lesson.lesson_id: lesson for lesson in lessons}
-    valid_ids = set(lesson_by_id)
 
     st.sidebar.markdown(
         """
@@ -438,17 +617,19 @@ def render_sidebar(lessons: list[Lesson]) -> Lesson:
     )
     lesson = lesson_by_id[selected_id]
 
-    completed = sum(bool(st.session_state["lesson_status"].get(item.lesson_id, False)) for item in lessons)
-    progress_ratio = completed / len(lessons)
-    st.sidebar.markdown(f"### 🏅 Progresso: {completed}/{len(lessons)}")
-    st.sidebar.progress(progress_ratio)
+    completed, completed_spells, total_spells, progress_ratio = progress_summary(lessons)
+    st.sidebar.markdown(f"### 🏅 Progresso: {completed}/{len(lessons)} aulas")
+    st.sidebar.progress(
+        progress_ratio,
+        text=f"{completed_spells}/{total_spells} feitiços executados",
+    )
 
     is_completed = bool(st.session_state["lesson_status"].get(selected_id, False))
     st.sidebar.button(
         "↩ Desmarcar conclusão" if is_completed else "✓ Concluir esta aula",
         key=f"toggle::{selected_id}",
         on_click=toggle_lesson,
-        args=(selected_id, len(lessons)),
+        args=(selected_id, code_cell_ids(lesson), len(lessons)),
         type="primary" if not is_completed else "secondary",
         use_container_width=True,
     )
@@ -481,7 +662,7 @@ def render_sidebar(lessons: list[Lesson]) -> Lesson:
         digest = hashlib.sha256(raw).hexdigest()
         if digest != st.session_state["import_digest"]:
             try:
-                import_progress(raw, valid_ids)
+                import_progress(raw, lessons)
                 st.session_state["import_digest"] = digest
                 st.session_state["flash_message"] = "Progresso restaurado com sucesso."
                 st.rerun()
@@ -511,10 +692,7 @@ def render_sidebar(lessons: list[Lesson]) -> Lesson:
 
 
 def render_main(lessons: list[Lesson], selected_lesson: Lesson) -> None:
-    completed = sum(
-        bool(st.session_state["lesson_status"].get(lesson.lesson_id, False)) for lesson in lessons
-    )
-    progress_ratio = completed / len(lessons)
+    completed, completed_spells, total_spells, progress_ratio = progress_summary(lessons)
     selected_position = next(i for i, lesson in enumerate(lessons) if lesson.lesson_id == selected_lesson.lesson_id)
 
     st.markdown(
@@ -553,8 +731,9 @@ def render_main(lessons: list[Lesson], selected_lesson: Lesson) -> None:
         )
     st.markdown(f'<div class="lesson-path">{"".join(path_items)}</div>', unsafe_allow_html=True)
 
-    if st.session_state.pop("flash_message", ""):
-        st.success("Progresso restaurado com sucesso.")
+    flash_message = st.session_state.pop("flash_message", "")
+    if flash_message:
+        st.success(flash_message)
     if st.session_state.pop("celebrate", False):
         st.balloons()
         st.success("🏆 Jornada completa! Você dominou as oito aulas do grimório.")
@@ -562,9 +741,12 @@ def render_main(lessons: list[Lesson], selected_lesson: Lesson) -> None:
     if st.session_state["lesson_status"].get(selected_lesson.lesson_id, False):
         st.success("Aula concluída. Você pode revisar os feitiços ou avançar para a próxima missão.")
     else:
-        st.info("Explore os exemplos, mude o código e marque a aula como concluída quando se sentir pronta ou pronto.")
+        st.info(
+            "Execute os laboratórios desta aula. Quando todos funcionarem, a aula e a barra de "
+            "progresso serão atualizadas automaticamente."
+        )
 
-    render_lesson(selected_lesson)
+    render_lesson(selected_lesson, len(lessons))
 
     st.markdown("### Continue sua jornada")
     previous_col, spacer, next_col = st.columns([1, 1.2, 1])
@@ -584,6 +766,8 @@ def render_main(lessons: list[Lesson], selected_lesson: Lesson) -> None:
             use_container_width=True,
         )
     spacer.caption("Seu progresso pode ser exportado pelo menu lateral.")
+    if st.session_state.pop("refresh_progress", False):
+        st.rerun()
 
 
 def main() -> None:

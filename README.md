@@ -5,11 +5,11 @@ Aplicativo educacional em Streamlit para crianças e adolescentes aprenderem Pyt
 ## Recursos
 
 - oito aulas com explicações em Markdown e laboratórios de código;
-- simulação de `input()` com uma resposta por linha;
+- caixas de resposta separadas e identificadas para cada chamada de `input()`;
 - captura de saída, erros amigáveis e gráficos Matplotlib;
 - variáveis preservadas entre execuções da mesma sessão;
 - timeout, limite de saída e política de código para proteger o servidor público;
-- progresso, anotações e histórico isolados por sessão;
+- progresso automático por laboratório executado, anotações e histórico isolados por sessão;
 - exportação e restauração do progresso em JSON;
 - interface responsiva em português.
 

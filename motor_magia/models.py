@@ -126,12 +126,14 @@ class HistoryEntry:
 class ProgressState:
     notes: dict[str, str] = field(default_factory=dict)
     lesson_status: dict[str, bool] = field(default_factory=dict)
+    completed_cells: dict[str, bool] = field(default_factory=dict)
     lesson_history: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "notes": dict(self.notes),
             "lesson_status": dict(self.lesson_status),
+            "completed_cells": dict(self.completed_cells),
             "lesson_history": list(self.lesson_history),
         }
 
@@ -139,18 +141,21 @@ class ProgressState:
     def from_dict(cls, data: dict[str, Any]) -> "ProgressState":
         notes = data.get("notes", {})
         lesson_status = data.get("lesson_status", {})
+        completed_cells = data.get("completed_cells", {})
         lesson_history = data.get("lesson_history", [])
 
         if not isinstance(notes, dict):
             notes = {}
         if not isinstance(lesson_status, dict):
             lesson_status = {}
+        if not isinstance(completed_cells, dict):
+            completed_cells = {}
         if not isinstance(lesson_history, list):
             lesson_history = []
 
         return cls(
             notes={str(k): str(v) for k, v in notes.items()},
             lesson_status={str(k): bool(v) for k, v in lesson_status.items()},
+            completed_cells={str(k): bool(v) for k, v in completed_cells.items()},
             lesson_history=[item for item in lesson_history if isinstance(item, dict)],
         )
-
