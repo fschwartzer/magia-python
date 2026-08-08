@@ -382,7 +382,7 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
              'cell_type': 'markdown',
              'source': '### 🌟 Missão de Casa\n'
                        '\n'
-                       'Você consegue adicionar uma **Pergunta 3** no código acima?\n'
+                       'Você consegue adicionar uma **Pergunta 5** no código acima?\n'
                        '\n'
                        '**Dica:** Copie e cole o bloco da pergunta do cachorro e mude as palavras. '
                        'Não esqueça de somar os pontos se acertar!',
