@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 
+from motor_magia.catalog import adapt_markdown_for_streamlit
 from motor_magia.licoes_extraidas import LESSONS_DATA
 
 
@@ -18,6 +19,35 @@ class CatalogTests(unittest.TestCase):
             cell_types = {cell["cell_type"] for cell in lesson["cells"]}
             self.assertIn("markdown", cell_types, lesson["lesson_id"])
             self.assertIn("code", cell_types, lesson["lesson_id"])
+
+    def test_execution_instructions_use_streamlit_button(self) -> None:
+        markdown = "\n".join(
+            cell["source"]
+            for lesson in LESSONS_DATA
+            for cell in lesson["cells"]
+            if cell["cell_type"] == "markdown"
+        )
+
+        self.assertNotRegex(markdown, r"(?i)\bplay\b")
+        self.assertNotIn("Rode o código", markdown)
+        self.assertNotIn("rodar esse código", markdown)
+        self.assertNotIn("rodar o gerador", markdown)
+        self.assertNotIn("abaixo do código e clique", markdown)
+        self.assertNotIn("caixas de resposta abaixo do código", markdown)
+        self.assertGreaterEqual(markdown.count("**Executar magia**"), 14)
+        self.assertGreaterEqual(markdown.count("pop-up"), 5)
+
+    def test_notebook_copy_is_adapted_without_changing_other_text(self) -> None:
+        source = (
+            "Leia com atenção.\n"
+            "Rode o código abaixo **várias vezes** e veja o número mudar!"
+        )
+
+        adapted = adapt_markdown_for_streamlit(source)
+
+        self.assertIn("Leia com atenção.", adapted)
+        self.assertIn("Clique em **Executar magia** várias vezes", adapted)
+        self.assertNotIn("Rode o código", adapted)
 
 
 if __name__ == "__main__":

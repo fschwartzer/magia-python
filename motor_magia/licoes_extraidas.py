@@ -1,6 +1,6 @@
 """Licoes extraidas automaticamente dos notebooks.
 Nao editar manualmente. Rode scripts/extrair_licoes.py.
-Gerado em: 2026-08-07 11:28:50
+Gerado em: 2026-08-08 18:11:55
 """
 
 LESSONS_DATA = [{'lesson_id': 'aula-1',
@@ -26,8 +26,8 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
                        '2. Fazer o computador **Guardar Segredos** (Memória).\n'
                        '3. Fazer o computador **Escutar** você.\n'
                        '\n'
-                       '**Dica Importante:** Para fazer a mágica acontecer, clique no botão de '
-                       '"Play" ▶️ ao lado de cada código!',
+                       '**Dica Importante:** Para fazer a mágica acontecer, clique em **Executar '
+                       'magia**, abaixo da caixa de código.',
              'requires_input': False,
              'default_code': None},
             {'cell_id': 'aula-1::cell-2',
@@ -38,8 +38,8 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
                        'O comando `print` serve para mostrar coisas na tela. É como se o '
                        'computador estivesse falando com você.\n'
                        '\n'
-                       '**Missão:** Clique no código abaixo e aperte o Play ▶️ para ver o que '
-                       'acontece.',
+                       '**Missão:** Observe o código abaixo e clique em **Executar magia** para '
+                       'ver o que acontece.',
              'requires_input': False,
              'default_code': None},
             {'cell_id': 'aula-1::cell-3',
@@ -55,7 +55,7 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
              'cell_type': 'markdown',
              'source': '### ⚡ Desafio Relâmpago!\n'
                        'No código abaixo, apague o texto que está dentro das aspas `" "` e escreva '
-                       'o seu nome. Depois aperte o Play!',
+                       'o seu nome. Depois, clique em **Executar magia**.',
              'requires_input': False,
              'default_code': None},
             {'cell_id': 'aula-1::cell-5',
@@ -104,8 +104,8 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
              'source': '## 👂 Feitiço 3: O Computador Curioso (`input`)\n'
                        '\n'
                        'E se a gente quiser que o computador faça uma pergunta para você?\n'
-                       'Usamos o comando `input`. Quando você rodar esse código, uma caixinha vai '
-                       'aparecer para você digitar sua resposta!',
+                       'Usamos o comando `input`. Clique em **Executar magia**, preencha a '
+                       'resposta no pop-up e confirme a execução!',
              'requires_input': False,
              'default_code': None},
             {'cell_id': 'aula-1::cell-10',
@@ -129,9 +129,10 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
                        'você responder.\n'
                        '\n'
                        '**Instruções:**\n'
-                       '1. Rode o código abaixo.\n'
-                       '2. Responda as perguntas que o computador fizer.\n'
-                       '3. Veja a história mágica que aparece no final!',
+                       '1. Clique em **Executar magia** abaixo do código.\n'
+                       '2. Preencha as caixas de resposta no pop-up.\n'
+                       '3. Clique em **Executar magia** no pop-up e veja a história mágica no '
+                       'final!',
              'requires_input': False,
              'default_code': None},
             {'cell_id': 'aula-1::cell-12',
@@ -180,8 +181,8 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
              'source': '## Parabéns! 🏆\n'
                        '\n'
                        'Você escreveu seu primeiro programa de computador. Você é incrível!\n'
-                       'Tente rodar o gerador de histórias de novo e inventar coisas ainda mais '
-                       'malucas.',
+                       'Clique em **Executar magia**, preencha o pop-up com novas respostas e '
+                       'confirme para inventar coisas ainda mais malucas.',
              'requires_input': False,
              'default_code': None}]},
  {'lesson_id': 'aula-2',
@@ -219,7 +220,7 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
                        'Na matemática, usamos um sinal de igual `=`. No Python, para perguntar '
                        '"Isso é igual àquilo?", nós usamos **DOIS** sinais de igual: `==`.\n'
                        '\n'
-                       'Tente adivinhar o que vai acontecer abaixo e aperte o Play ▶️.',
+                       'Tente adivinhar o que vai acontecer abaixo e clique em **Executar magia**.',
              'requires_input': False,
              'default_code': None},
             {'cell_id': 'aula-2::cell-3',
@@ -275,9 +276,11 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
             {'cell_id': 'aula-2::cell-7',
              'index': 7,
              'cell_type': 'markdown',
-             'source': '**Desafio:** Rode o código acima duas vezes.\n'
-                       '1. Na primeira vez, digite `chocolate` (tudo minúsculo).\n'
-                       '2. Na segunda vez, digite `abacaxi` e veja o que acontece.',
+             'source': '**Desafio:** Execute o código duas vezes usando o botão **Executar '
+                       'magia**.\n'
+                       '1. Na primeira execução, preencha o pop-up com `chocolate` (tudo '
+                       'minúsculo) e confirme.\n'
+                       '2. Na segunda, preencha o pop-up com `abacaxi` e confirme novamente.',
              'requires_input': False,
              'default_code': None},
             {'cell_id': 'aula-2::cell-8',
@@ -420,7 +423,7 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
                        '\n'
                        'Vamos pegar a ferramenta `random` (que significa **Aleatório** ou '
                        '**Sorte**).\n'
-                       'Rode o código abaixo **várias vezes** e veja o número mudar!',
+                       'Clique em **Executar magia** várias vezes e veja o número mudar!',
              'requires_input': False,
              'default_code': None},
             {'cell_id': 'aula-3::cell-3',
@@ -505,7 +508,8 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
                        '2. Você vai tentar adivinhar.\n'
                        '3. O jogo **NÃO VAI PARAR** (loop) até você acertar!\n'
                        '\n'
-                       'Preparada? Aperte o play!',
+                       'Preparada? Clique em **Executar magia**, preencha a resposta no pop-up e '
+                       'confirme!',
              'requires_input': False,
              'default_code': None},
             {'cell_id': 'aula-3::cell-8',
@@ -600,7 +604,7 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
                        'Para fazer uma lista, usamos os colchetes `[ ]` e separamos as coisas com '
                        'vírgulas.\n'
                        '\n'
-                       'Veja a lista de compras abaixo e aperte o Play ▶️.',
+                       'Veja a lista de compras abaixo e clique em **Executar magia**.',
              'requires_input': False,
              'default_code': None},
             {'cell_id': 'aula-4::cell-3',
@@ -728,7 +732,7 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
                        '1. No código abaixo, mude os nomes das brincadeiras para as que você mais '
                        'gosta.\n'
                        '2. Pode adicionar mais brincadeiras se quiser!\n'
-                       '3. Rode o código para ver o que o destino escolheu.',
+                       '3. Clique em **Executar magia** para ver o que o destino escolheu.',
              'requires_input': False,
              'default_code': None},
             {'cell_id': 'aula-4::cell-10',
@@ -882,7 +886,7 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
                        '**Sua Missão:**\n'
                        '1. Coloque os nomes da sua família ou amigos na lista.\n'
                        '2. O Robô `for` vai adicionar um título heroico para cada um.\n'
-                       '3. Aperte o Play!',
+                       '3. Clique em **Executar magia**!',
              'requires_input': False,
              'default_code': None},
             {'cell_id': 'aula-5::cell-9',
@@ -1239,7 +1243,8 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
                        '- Se comer: Fome diminui, mas Alegria aumenta um pouco.\n'
                        '- Se brincar: Alegria aumenta muito, mas Fome também aumenta!\n'
                        '\n'
-                       'Rode o código e cuide do seu bichinho!',
+                       'Clique em **Executar magia**, preencha as respostas no pop-up e cuide do '
+                       'seu bichinho!',
              'requires_input': False,
              'default_code': None},
             {'cell_id': 'aula-7::cell-7',

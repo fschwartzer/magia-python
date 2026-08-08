@@ -13,36 +13,59 @@ class StreamlitAppTests(unittest.TestCase):
         app_path = Path(__file__).resolve().parents[1] / "app.py"
         return AppTest.from_file(str(app_path), default_timeout=30).run()
 
+    def execute_cell(self, app, cell_index: int, answers: list[str] | None = None) -> None:
+        cell_id = f"aula-1::cell-{cell_index}"
+        run_button = next(button for button in app.button if button.key == f"run::{cell_id}")
+        run_button.click().run()
+
+        if answers is None:
+            return
+
+        modal_fields = [
+            field for field in app.text_input if str(field.key).startswith(f"input::{cell_id}::")
+        ]
+        self.assertEqual(len(modal_fields), len(answers))
+        for field, answer in zip(modal_fields, answers, strict=True):
+            field.set_value(answer)
+        submit_button = next(
+            button for button in app.button if button.key == f"submit::{cell_id}"
+        )
+        submit_button.click().run()
+        # O AppTest preserva a árvore do fragmento por um ciclo após st.rerun().
+        # Reponha os valores removidos com o modal e faça um ciclo de estabilização.
+        for field, answer in zip(modal_fields, answers, strict=True):
+            app.session_state[str(field.key)] = answer
+        app.run()
+
     def test_app_starts_without_exception(self) -> None:
         app = self.make_app()
         self.assertFalse(list(app.exception))
         self.assertEqual(len(app.selectbox), 1)
         self.assertEqual(len(app.text_area) > 0, True)
-        self.assertEqual(
-            [field.label for field in app.text_input],
-            [
-                "Qual é o seu nome?",
-                "1. Digite o nome de um animal (ex: gato, dragão)",
-                "2. Digite uma cor bem diferente",
-                "3. Digite uma comida estranha",
-                "4. Digite um lugar (ex: castelo, escola, lua)",
-            ],
-        )
+        self.assertEqual(list(app.text_input), [])
+
+    def test_input_fields_appear_only_after_opening_modal(self) -> None:
+        app = self.make_app()
+
+        self.execute_cell(app, 10, ["Luna"])
+
+        self.assertFalse(list(app.exception))
+        self.assertNotIn("input_dialog_request", app.session_state.filtered_state)
+        output = app.session_state["runtime"].cell_outputs["aula-1::cell-10"]
+        self.assertIn("Prazer em te conhecer, Luna", output["stdout"])
+        self.assertTrue(app.session_state["completed_cells"]["aula-1::cell-10"])
 
     def test_progress_updates_after_successful_laboratories(self) -> None:
         app = self.make_app()
-        answers = ["Luna", "dragão", "azul", "pizza", "castelo"]
-        for field, answer in zip(app.text_input, answers, strict=True):
-            field.set_value(answer)
-        app.run()
-
-        for cell_index in (3, 5, 7, 10, 12):
-            run_button = next(
-                button
-                for button in app.button
-                if button.key == f"run::aula-1::cell-{cell_index}"
-            )
-            run_button.click().run()
+        executions = (
+            (3, None),
+            (5, None),
+            (7, None),
+            (10, ["Luna"]),
+            (12, ["dragão", "azul", "pizza", "castelo"]),
+        )
+        for cell_index, answers in executions:
+            self.execute_cell(app, cell_index, answers)
             self.assertFalse(list(app.exception))
 
         self.assertEqual(app.metric[0].value, "1/8")

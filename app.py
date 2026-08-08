@@ -539,6 +539,145 @@ def render_output(runtime: RuntimeSession, cell_id: str) -> None:
         st.caption(f"Executado em {output.get('executed_at', '')}")
 
 
+def execute_code_cell(
+    *,
+    lesson: Lesson,
+    cell: Any,
+    total_lessons: int,
+    code: str,
+    raw_inputs: str = "",
+) -> bool:
+    """Execute one code cell and return whether its progress changed."""
+    runtime: RuntimeSession = st.session_state["runtime"]
+    with st.spinner("Misturando o feitiço no caldeirão seguro..."):
+        result = runtime.execute(
+            code=code,
+            lesson_id=lesson.lesson_id,
+            lesson_title=lesson.title,
+            cell_id=cell.cell_id,
+            raw_inputs=raw_inputs,
+        )
+    return not result.get("error") and register_successful_cell(
+        lesson, cell.cell_id, total_lessons
+    )
+
+
+def dismiss_input_dialog() -> None:
+    st.session_state.pop("input_dialog_request", None)
+
+
+@st.dialog(
+    "🪄 Responda antes de executar",
+    width="medium",
+    on_dismiss=dismiss_input_dialog,
+)
+def render_input_dialog(
+    *,
+    lesson: Lesson,
+    cell: Any,
+    total_lessons: int,
+    code: str,
+    prompts: list[str],
+    has_repeating_input: bool,
+) -> None:
+    """Collect all detected input() answers and execute the code once."""
+    st.caption(
+        "Preencha as respostas abaixo. O código será executado somente quando você "
+        "clicar em Executar magia."
+    )
+    with st.form(f"input_form::{cell.cell_id}", border=False):
+        answers: list[str] = []
+        for prompt_index, prompt in enumerate(prompts, start=1):
+            label = prompt if len(prompts) == 1 else f"{prompt_index}. {prompt}"
+            answers.append(
+                st.text_input(
+                    label,
+                    key=f"input::{cell.cell_id}::{prompt_index}",
+                    placeholder="Digite sua resposta aqui",
+                )
+            )
+
+        if has_repeating_input:
+            st.caption(
+                "Este programa pode repetir a mesma pergunta. Se necessário, informe "
+                "as próximas respostas, uma por linha."
+            )
+            extra_answers = st.text_area(
+                "Respostas seguintes (opcional)",
+                key=f"input_extra::{cell.cell_id}",
+                height=90,
+                placeholder="Uma nova resposta por linha",
+            )
+            answers.extend(extra_answers.splitlines())
+
+        submitted = st.form_submit_button(
+            "▶ Executar magia",
+            key=f"submit::{cell.cell_id}",
+            type="primary",
+            use_container_width=True,
+        )
+
+    if submitted:
+        st.session_state.pop("input_dialog_request", None)
+        execute_code_cell(
+            lesson=lesson,
+            cell=cell,
+            total_lessons=total_lessons,
+            code=code,
+            raw_inputs="\n".join(answers),
+        )
+        # Um rerun completo fecha o modal e atualiza o progresso da barra lateral.
+        st.rerun()
+
+
+def queue_input_dialog(
+    *,
+    lesson: Lesson,
+    cell: Any,
+    code: str,
+    prompts: list[str],
+    has_repeating_input: bool,
+) -> None:
+    st.session_state["input_dialog_request"] = {
+        "lesson_id": lesson.lesson_id,
+        "cell_id": cell.cell_id,
+        "code": code,
+        "prompts": list(prompts),
+        "has_repeating_input": bool(has_repeating_input),
+    }
+
+
+def render_pending_input_dialog(lessons: list[Lesson]) -> None:
+    request = st.session_state.get("input_dialog_request")
+    if not isinstance(request, dict):
+        return
+
+    lesson = next(
+        (item for item in lessons if item.lesson_id == request.get("lesson_id")),
+        None,
+    )
+    cell = next(
+        (
+            item
+            for item in lesson.cells
+            if item.cell_type == "code" and item.cell_id == request.get("cell_id")
+        ),
+        None,
+    ) if lesson else None
+    if lesson is None or cell is None:
+        dismiss_input_dialog()
+        return
+
+    render_input_dialog(
+        lesson=lesson,
+        cell=cell,
+        total_lessons=len(lessons),
+        code=str(request.get("code", cell.default_code or cell.source)),
+        prompts=[str(prompt) for prompt in request.get("prompts", [])],
+        has_repeating_input=bool(request.get("has_repeating_input", False)),
+    )
+
+
 def render_code_cell(lesson: Lesson, cell: Any, total_lessons: int) -> None:
     runtime: RuntimeSession = st.session_state["runtime"]
     code_key = f"code::{cell.cell_id}"
@@ -559,32 +698,6 @@ def render_code_cell(lesson: Lesson, cell: Any, total_lessons: int) -> None:
         )
 
         prompts, has_repeating_input = input_prompts(code)
-        answers: list[str] = []
-        if prompts:
-            st.markdown("**Responda às perguntas do programa**")
-            st.caption("Digite somente a resposta em cada caixa. A pergunta já está indicada no rótulo.")
-            for prompt_index, prompt in enumerate(prompts, start=1):
-                label = prompt if len(prompts) == 1 else f"{prompt_index}. {prompt}"
-                answers.append(
-                    st.text_input(
-                        label,
-                        key=f"input::{cell.cell_id}::{prompt_index}",
-                        placeholder="Digite sua resposta aqui",
-                    )
-                )
-            if has_repeating_input:
-                st.caption(
-                    "Este programa pode repetir a mesma pergunta. Se necessário, informe abaixo "
-                    "as próximas respostas, uma por linha."
-                )
-                extra_answers = st.text_area(
-                    "Respostas seguintes (opcional)",
-                    key=f"input_extra::{cell.cell_id}",
-                    height=90,
-                    placeholder="Uma nova resposta por linha",
-                )
-                answers.extend(extra_answers.splitlines())
-        raw_inputs = "\n".join(answers)
 
         run_col, restore_col, clear_col = st.columns([1.45, 1, 1])
         run_clicked = run_col.button(
@@ -604,16 +717,19 @@ def render_code_cell(lesson: Lesson, cell: Any, total_lessons: int) -> None:
             runtime.clear_cell_output(cell.cell_id)
 
         if run_clicked:
-            with st.spinner("Misturando o feitiço no caldeirão seguro..."):
-                result = runtime.execute(
+            if prompts:
+                queue_input_dialog(
+                    lesson=lesson,
+                    cell=cell,
                     code=code,
-                    lesson_id=lesson.lesson_id,
-                    lesson_title=lesson.title,
-                    cell_id=cell.cell_id,
-                    raw_inputs=raw_inputs,
+                    prompts=prompts,
+                    has_repeating_input=has_repeating_input,
                 )
-            if not result.get("error") and register_successful_cell(
-                lesson, cell.cell_id, total_lessons
+            elif execute_code_cell(
+                lesson=lesson,
+                cell=cell,
+                total_lessons=total_lessons,
+                code=code,
             ):
                 # O menu lateral é renderizado antes dos laboratórios. O novo
                 # ciclo ocorre ao fim da página, depois que os demais widgets
@@ -813,6 +929,7 @@ def main() -> None:
     bootstrap_session_state(lessons)
     selected_lesson = render_sidebar(lessons)
     render_main(lessons, selected_lesson)
+    render_pending_input_dialog(lessons)
 
 
 if __name__ == "__main__":
