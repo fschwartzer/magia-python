@@ -252,6 +252,40 @@ def setup_page() -> None:
             filter: brightness(.98);
         }
 
+        /* Mantém os controles claros da barra lateral legíveis nos temas claro
+           e escuro. O Streamlit aplica a cor do tema aos textos internos (p,
+           span e small), então cada descendente também precisa ser sobrescrito. */
+        [data-testid="stSidebar"] [data-testid="stDownloadButton"] button,
+        [data-testid="stSidebar"] [data-testid="stButton"] button[kind="secondary"],
+        [data-testid="stSidebar"] [data-testid="stButton"] [data-testid="stBaseButton-secondary"] {
+            background: #fffdf3 !important;
+            color: #232044 !important;
+        }
+        [data-testid="stSidebar"] [data-testid="stDownloadButton"] button *,
+        [data-testid="stSidebar"] [data-testid="stButton"] button[kind="secondary"] *,
+        [data-testid="stSidebar"] [data-testid="stButton"] [data-testid="stBaseButton-secondary"] * {
+            color: #232044 !important;
+            fill: #232044 !important;
+            -webkit-text-fill-color: #232044 !important;
+            opacity: 1 !important;
+        }
+        [data-testid="stSidebar"] [data-testid="stFileUploaderDropzoneInstructions"],
+        [data-testid="stSidebar"] [data-testid="stFileUploaderDropzoneInstructions"] * {
+            color: #fffdf3 !important;
+            -webkit-text-fill-color: #fffdf3 !important;
+            opacity: 1 !important;
+        }
+        [data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button {
+            background: #fffdf3 !important;
+            color: #232044 !important;
+        }
+        [data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button * {
+            color: #232044 !important;
+            fill: #232044 !important;
+            -webkit-text-fill-color: #232044 !important;
+            opacity: 1 !important;
+        }
+
         [data-testid="stAlert"] { border: 0 !important; border-radius: 22px !important; }
         .stCodeBlock { border-radius: 20px; overflow: hidden; }
 
