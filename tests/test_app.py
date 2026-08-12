@@ -114,6 +114,21 @@ class StreamlitAppTests(unittest.TestCase):
             ]
             self.assertEqual(numbers, list(range(1, lesson["code_cells"] + 1)))
 
+    def test_last_lesson_has_a_journey_completion_message(self) -> None:
+        app = self.make_app()
+        app.selectbox[0].set_value("aula-8").run()
+        rendered_markdown = "\n".join(markdown.value for markdown in app.markdown)
+
+        self.assertIn("Parabéns! Você encerrou sua jornada!", rendered_markdown)
+        self.assertIn("a magia mais poderosa do Python", rendered_markdown)
+        self.assertNotIn("### Continue sua jornada", rendered_markdown)
+
+        app.selectbox[0].set_value("aula-7").run()
+        previous_lesson_markdown = "\n".join(
+            markdown.value for markdown in app.markdown
+        )
+        self.assertIn("### Continue sua jornada", previous_lesson_markdown)
+
     def test_guessing_game_keeps_one_secret_until_the_correct_guess(self) -> None:
         app = self.make_app()
         app.selectbox[0].set_value("aula-3").run()

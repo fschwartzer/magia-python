@@ -1268,7 +1268,25 @@ def render_main(lessons: list[Lesson], selected_lesson: Lesson) -> None:
 
     render_lesson(selected_lesson, len(lessons))
 
-    st.markdown("### Continue sua jornada")
+    is_last_lesson = selected_position == len(lessons) - 1
+    if is_last_lesson:
+        st.markdown("### 🏆 Parabéns! Você encerrou sua jornada!")
+        st.markdown(
+            """
+Você começou aprendendo a fazer o computador falar e chegou até aqui criando
+histórias, jogos, funções, listas, dicionários e gráficos. Cada linha escrita,
+cada tentativa e cada erro desvendado acrescentou um novo feitiço ao seu
+grimório de programação.
+
+Mas toda grande feiticeira sabe: concluir uma jornada não significa parar de
+aprender. Agora você já pode misturar os conhecimentos das oito aulas, inventar
+projetos e transformar suas próprias ideias em código. Continue curiosa,
+experimente sem medo e lembre-se de que a magia mais poderosa do Python é a que
+você ainda vai criar. ✨🐍
+            """
+        )
+    else:
+        st.markdown("### Continue sua jornada")
     previous_col, spacer, next_col = st.columns([1, 1.2, 1])
     if selected_position > 0:
         previous_col.button(
@@ -1285,7 +1303,10 @@ def render_main(lessons: list[Lesson], selected_lesson: Lesson) -> None:
             type="primary",
             use_container_width=True,
         )
-    spacer.caption("Seu progresso pode ser exportado pelo menu lateral.")
+    if is_last_lesson:
+        spacer.caption("Guarde suas conquistas exportando o progresso pelo menu lateral.")
+    else:
+        spacer.caption("Seu progresso pode ser exportado pelo menu lateral.")
     if st.session_state.pop("refresh_progress", False):
         st.rerun()
 
