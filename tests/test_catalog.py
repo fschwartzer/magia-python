@@ -82,6 +82,8 @@ class CatalogTests(unittest.TestCase):
         self.assertNotIn("aula-6::cell-8", code)
         self.assertIn("sua_frase = input()", code["aula-6::cell-11"])
         self.assertIn("def idade_canina(numero):", code["aula-6::cell-13"])
+        for cell_id in ("aula-8::cell-3", "aula-8::cell-5", "aula-8::cell-7"):
+            self.assertIn("import matplotlib.pyplot as plt", code[cell_id])
         code_cell_count = sum(
             lesson.to_dict()["code_cells"] for lesson in lessons.values()
         )

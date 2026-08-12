@@ -127,6 +127,28 @@ _APP_CODE_OVERRIDES: dict[tuple[str, int], str] = {
         "sua_frase = input()\n"
         "enfeitar(sua_frase)"
     ),
+    ("aula-8", 5): (
+        "import matplotlib.pyplot as plt\n\n"
+        'dias = ["Seg", "Ter", "Qua", "Qui", "Sex"]\n'
+        "temperatura = [25, 28, 22, 30, 31]\n\n"
+        '# Tente mudar "orange" para "pink" ou "green"\n'
+        'plt.plot(dias, temperatura, color="orange", marker="o")\n\n'
+        'plt.title("Temperatura da Semana ☀️")\n'
+        "plt.show()"
+    ),
+    ("aula-8", 7): (
+        "import matplotlib.pyplot as plt\n\n"
+        "# Nomes das frutas\n"
+        'frutas = ["Maçã 🍎", "Banana 🍌", "Uva 🍇", "Laranja 🍊"]\n\n'
+        "# Quantos votos cada uma teve\n"
+        "votos = [5, 10, 3, 8]\n\n"
+        "# Criando o gráfico de barras\n"
+        "# Podemos escolher uma cor para cada barra!\n"
+        'cores = ["red", "yellow", "purple", "orange"]\n\n'
+        "plt.bar(frutas, votos, color=cores)\n\n"
+        'plt.title("Campeonato das Frutas 🏆")\n'
+        "plt.show()"
+    ),
 }
 
 _EXTRA_APP_CODE_CELLS: dict[tuple[str, int], tuple[int, str]] = {

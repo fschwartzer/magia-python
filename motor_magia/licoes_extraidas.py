@@ -1,6 +1,6 @@
 """Licoes extraidas automaticamente dos notebooks.
 Nao editar manualmente. Rode scripts/extrair_licoes.py.
-Gerado em: 2026-08-12 14:44:06
+Gerado em: 2026-08-12 15:57:16
 """
 
 LESSONS_DATA = [{'lesson_id': 'aula-1',
@@ -1446,7 +1446,9 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
             {'cell_id': 'aula-8::cell-5',
              'index': 5,
              'cell_type': 'code',
-             'source': 'dias = ["Seg", "Ter", "Qua", "Qui", "Sex"]\n'
+             'source': 'import matplotlib.pyplot as plt\n'
+                       '\n'
+                       'dias = ["Seg", "Ter", "Qua", "Qui", "Sex"]\n'
                        'temperatura = [25, 28, 22, 30, 31]\n'
                        '\n'
                        '# Tente mudar "orange" para "pink" ou "green"\n'
@@ -1455,7 +1457,9 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
                        'plt.title("Temperatura da Semana ☀️")\n'
                        'plt.show()',
              'requires_input': False,
-             'default_code': 'dias = ["Seg", "Ter", "Qua", "Qui", "Sex"]\n'
+             'default_code': 'import matplotlib.pyplot as plt\n'
+                             '\n'
+                             'dias = ["Seg", "Ter", "Qua", "Qui", "Sex"]\n'
                              'temperatura = [25, 28, 22, 30, 31]\n'
                              '\n'
                              '# Tente mudar "orange" para "pink" ou "green"\n'
@@ -1479,7 +1483,9 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
             {'cell_id': 'aula-8::cell-7',
              'index': 7,
              'cell_type': 'code',
-             'source': '# Nomes das frutas\n'
+             'source': 'import matplotlib.pyplot as plt\n'
+                       '\n'
+                       '# Nomes das frutas\n'
                        'frutas = ["Maçã 🍎", "Banana 🍌", "Uva 🍇", "Laranja 🍊"]\n'
                        '\n'
                        '# Quantos votos cada uma teve\n'
@@ -1494,7 +1500,9 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
                        'plt.title("Campeonato das Frutas 🏆")\n'
                        'plt.show()',
              'requires_input': False,
-             'default_code': '# Nomes das frutas\n'
+             'default_code': 'import matplotlib.pyplot as plt\n'
+                             '\n'
+                             '# Nomes das frutas\n'
                              'frutas = ["Maçã 🍎", "Banana 🍌", "Uva 🍇", "Laranja 🍊"]\n'
                              '\n'
                              '# Quantos votos cada uma teve\n'

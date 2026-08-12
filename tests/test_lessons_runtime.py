@@ -42,6 +42,24 @@ class LessonRuntimeTests(unittest.TestCase):
             finally:
                 runtime.close()
 
+    def test_each_plot_laboratory_runs_in_a_fresh_sandbox(self) -> None:
+        lesson = Lesson.from_dict(LESSONS_DATA[7])
+        plot_cells = [cell for cell in lesson.cells if cell.cell_type == "code"]
+
+        for cell in plot_cells:
+            runtime = RuntimeSession(timeout_seconds=8)
+            try:
+                result = runtime.execute(
+                    code=cell.default_code or cell.source,
+                    lesson_id=lesson.lesson_id,
+                    lesson_title=lesson.title,
+                    cell_id=cell.cell_id,
+                )
+                self.assertFalse(result["error"], f"{cell.cell_id}: {result['error']}")
+                self.assertEqual(len(result["plots"]), 1, cell.cell_id)
+            finally:
+                runtime.close()
+
 
 if __name__ == "__main__":
     unittest.main()
