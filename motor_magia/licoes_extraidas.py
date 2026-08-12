@@ -61,9 +61,9 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
             {'cell_id': 'aula-1::cell-5',
              'index': 5,
              'cell_type': 'code',
-             'source': 'print("caroline")',
+             'source': 'print("escreva aqui seu nome")',
              'requires_input': False,
-             'default_code': 'print("caroline")'},
+             'default_code': 'print("escreva aqui seu nome")'},
             {'cell_id': 'aula-1::cell-6',
              'index': 6,
              'cell_type': 'markdown',
@@ -81,13 +81,13 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
              'index': 7,
              'cell_type': 'code',
              'source': '# Criando a caixinha\n'
-                       'comida_favorita = "massa com molho de tomate"\n'
+                       'comida_favorita = "escreva aqui sua comida favorita"\n'
                        '\n'
                        '# Mandando o computador mostrar o que tem dentro da caixinha\n'
                        'print(comida_favorita)',
              'requires_input': False,
              'default_code': '# Criando a caixinha\n'
-                             'comida_favorita = "massa com molho de tomate"\n'
+                             'comida_favorita = "escreva aqui sua comida favorita"\n'
                              '\n'
                              '# Mandando o computador mostrar o que tem dentro da caixinha\n'
                              'print(comida_favorita)'},
