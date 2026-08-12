@@ -84,10 +84,20 @@ class CatalogTests(unittest.TestCase):
         self.assertIn("def idade_canina(numero):", code["aula-6::cell-13"])
         for cell_id in ("aula-8::cell-3", "aula-8::cell-5", "aula-8::cell-7"):
             self.assertIn("import matplotlib.pyplot as plt", code[cell_id])
+        self.assertIn("# 1. Troque os nomes", code["aula-8::cell-9"])
+        self.assertIn("# 2. Troque os números", code["aula-8::cell-9"])
+        self.assertIn("# 3. Você também pode trocar as cores", code["aula-8::cell-9"])
+        self.assertIn("# 4. Troque o título", code["aula-8::cell-9"])
+        aula_8_markdown = "\n".join(
+            cell.source
+            for cell in lessons["aula-8"].cells
+            if cell.cell_type == "markdown"
+        )
+        self.assertIn("Laboratório de código abaixo", aula_8_markdown)
         code_cell_count = sum(
             lesson.to_dict()["code_cells"] for lesson in lessons.values()
         )
-        self.assertEqual(code_cell_count, 30)
+        self.assertEqual(code_cell_count, 31)
 
 
 if __name__ == "__main__":

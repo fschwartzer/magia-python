@@ -1,6 +1,6 @@
 """Licoes extraidas automaticamente dos notebooks.
 Nao editar manualmente. Rode scripts/extrair_licoes.py.
-Gerado em: 2026-08-12 15:57:16
+Gerado em: 2026-08-12 16:17:49
 """
 
 LESSONS_DATA = [{'lesson_id': 'aula-1',
@@ -1350,8 +1350,8 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
   'order': 8,
   'title': '📊 Aula 8: A Grande Mestra',
   'notebook_file': 'minha_oitava_aula.ipynb',
-  'total_cells': 8,
-  'code_cells': 3,
+  'total_cells': 9,
+  'code_cells': 4,
   'markdown_cells': 5,
   'cells': [{'cell_id': 'aula-8::cell-1',
              'index': 1,
@@ -1527,7 +1527,54 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
                        '1. **Idade das pessoas:** Crie uma lista com nomes e outra com idades.\n'
                        '2. **Pontuação de Videogame:** Quem fez mais pontos?\n'
                        '\n'
-                       'Use o código de barras acima como exemplo, mude os nomes e os números, e '
-                       'veja o resultado!',
+                       'Use o **Laboratório de código abaixo**. Os comentários mostram onde trocar '
+                       'os nomes, os números, as cores e o título. Depois, clique em **Executar '
+                       'magia** para ver o resultado!',
              'requires_input': False,
-             'default_code': None}]}]
+             'default_code': None},
+            {'cell_id': 'aula-8::cell-9',
+             'index': 9,
+             'cell_type': 'code',
+             'source': 'import matplotlib.pyplot as plt\n'
+                       '\n'
+                       '# 1. Troque os nomes entre aspas pelos nomes da sua família ou dos seus '
+                       'amigos.\n'
+                       'nomes = ["Maria", "José", "João"]\n'
+                       '\n'
+                       '# 2. Troque os números pelas idades ou pontuações de cada pessoa.\n'
+                       'numeros = [10, 35, 62]\n'
+                       '\n'
+                       '# 3. Você também pode trocar as cores das barras.\n'
+                       'cores = ["purple", "orange", "green"]\n'
+                       '\n'
+                       '# 4. Troque o título para explicar o que o seu gráfico mostra.\n'
+                       'titulo = "Idade da minha família"\n'
+                       '\n'
+                       '# O computador usa suas listas para desenhar o gráfico.\n'
+                       'plt.bar(nomes, numeros, color=cores)\n'
+                       'plt.title(titulo)\n'
+                       'plt.xlabel("Pessoas")\n'
+                       'plt.ylabel("Idade ou pontuação")\n'
+                       'plt.show()',
+             'requires_input': False,
+             'default_code': 'import matplotlib.pyplot as plt\n'
+                             '\n'
+                             '# 1. Troque os nomes entre aspas pelos nomes da sua família ou dos '
+                             'seus amigos.\n'
+                             'nomes = ["Maria", "José", "João"]\n'
+                             '\n'
+                             '# 2. Troque os números pelas idades ou pontuações de cada pessoa.\n'
+                             'numeros = [10, 35, 62]\n'
+                             '\n'
+                             '# 3. Você também pode trocar as cores das barras.\n'
+                             'cores = ["purple", "orange", "green"]\n'
+                             '\n'
+                             '# 4. Troque o título para explicar o que o seu gráfico mostra.\n'
+                             'titulo = "Idade da minha família"\n'
+                             '\n'
+                             '# O computador usa suas listas para desenhar o gráfico.\n'
+                             'plt.bar(nomes, numeros, color=cores)\n'
+                             'plt.title(titulo)\n'
+                             'plt.xlabel("Pessoas")\n'
+                             'plt.ylabel("Idade ou pontuação")\n'
+                             'plt.show()'}]}]

@@ -84,6 +84,19 @@ _SKIPPED_APP_CELLS: frozenset[tuple[str, int]] = frozenset(
     }
 )
 
+_APP_MARKDOWN_OVERRIDES: dict[tuple[str, int], str] = {
+    ("aula-8", 8): (
+        "### 🏆 Desafio da Cientista\n\n"
+        "Crie um gráfico sobre a sua família ou amigos!\n\n"
+        "Ideias:\n"
+        "1. **Idade das pessoas:** Crie uma lista com nomes e outra com idades.\n"
+        "2. **Pontuação de Videogame:** Quem fez mais pontos?\n\n"
+        "Use o **Laboratório de código abaixo**. Os comentários mostram onde trocar "
+        "os nomes, os números, as cores e o título. Depois, clique em "
+        "**Executar magia** para ver o resultado!"
+    )
+}
+
 _APP_CODE_OVERRIDES: dict[tuple[str, int], str] = {
     ("aula-1", 5): 'print("escreva aqui seu nome")',
     ("aula-1", 7): (
@@ -158,7 +171,25 @@ _EXTRA_APP_CODE_CELLS: dict[tuple[str, int], tuple[int, str]] = {
         "    # Um ano humano vale sete anos de cachorro.\n"
         "    print(numero * 7)\n\n"
         "idade_canina(2)",
-    )
+    ),
+    ("aula-8", 8): (
+        9,
+        "import matplotlib.pyplot as plt\n\n"
+        "# 1. Troque os nomes entre aspas pelos nomes da sua família ou dos seus amigos.\n"
+        'nomes = ["Maria", "José", "João"]\n\n'
+        "# 2. Troque os números pelas idades ou pontuações de cada pessoa.\n"
+        "numeros = [10, 35, 62]\n\n"
+        "# 3. Você também pode trocar as cores das barras.\n"
+        'cores = ["purple", "orange", "green"]\n\n'
+        "# 4. Troque o título para explicar o que o seu gráfico mostra.\n"
+        'titulo = "Idade da minha família"\n\n'
+        "# O computador usa suas listas para desenhar o gráfico.\n"
+        "plt.bar(nomes, numeros, color=cores)\n"
+        "plt.title(titulo)\n"
+        'plt.xlabel("Pessoas")\n'
+        'plt.ylabel("Idade ou pontuação")\n'
+        "plt.show()",
+    ),
 }
 
 
@@ -187,7 +218,8 @@ def adapt_lesson_cell_for_app(
     if (lesson_id, index) in _SKIPPED_APP_CELLS:
         return None
     if cell_type == "markdown":
-        return adapt_markdown_for_streamlit(source)
+        adapted = adapt_markdown_for_streamlit(source)
+        return _APP_MARKDOWN_OVERRIDES.get((lesson_id, index), adapted)
     return _APP_CODE_OVERRIDES.get((lesson_id, index), source)
 
 
