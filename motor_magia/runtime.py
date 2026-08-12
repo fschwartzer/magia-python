@@ -13,6 +13,27 @@ from .config import EXECUTION_TIMEOUT_SECONDS, MAX_HISTORY_ITEMS
 from .models import ExecutionResult, HistoryEntry
 
 
+def worker_environment() -> dict[str, str]:
+    """Build a deterministic, low-memory environment for the sandbox worker."""
+
+    return {
+        **os.environ,
+        "MPLBACKEND": "Agg",
+        "PYTHONUNBUFFERED": "1",
+        "PYTHONIOENCODING": "utf-8",
+        # NumPy/OpenBLAS may otherwise create one worker per CPU. On small
+        # cloud containers the thread stacks exhaust memory before Aula 8 can
+        # render its first graph.
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "BLIS_NUM_THREADS": "1",
+        "MALLOC_ARENA_MAX": "2",
+    }
+
+
 class SandboxUnavailableError(RuntimeError):
     """Raised when the isolated Python worker cannot be started or contacted."""
 
@@ -41,12 +62,6 @@ class _SandboxClient:
         if os.name == "nt" and hasattr(subprocess, "CREATE_NO_WINDOW"):
             creationflags = subprocess.CREATE_NO_WINDOW
 
-        env = {
-            **os.environ,
-            "MPLBACKEND": "Agg",
-            "PYTHONUNBUFFERED": "1",
-            "PYTHONIOENCODING": "utf-8",
-        }
         self._process = subprocess.Popen(
             [sys.executable, "-I", "-u", str(self.worker_path)],
             stdin=subprocess.PIPE,
@@ -55,7 +70,7 @@ class _SandboxClient:
             text=True,
             encoding="utf-8",
             bufsize=1,
-            env=env,
+            env=worker_environment(),
             creationflags=creationflags,
         )
 

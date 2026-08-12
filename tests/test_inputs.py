@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from app import input_prompts
+from app import input_labels_for_cell, input_prompts
 from motor_magia.licoes_extraidas import LESSONS_DATA
 from motor_magia.models import Lesson
 from motor_magia.models import ProgressState
@@ -22,6 +22,14 @@ class InputPromptTests(unittest.TestCase):
         )
         self.assertEqual(prompts, ["Sua tentativa"])
         self.assertTrue(repeats)
+
+    def test_decorator_uses_a_descriptive_modal_label(self) -> None:
+        prompts, repeats = input_prompts("sua_frase = input()")
+        self.assertEqual(
+            input_labels_for_cell("aula-6::cell-11", prompts),
+            ["Escreva algo para enfeitar"],
+        )
+        self.assertFalse(repeats)
 
     def test_all_notebook_inputs_receive_identified_fields(self) -> None:
         observed: dict[tuple[int, int], int] = {}

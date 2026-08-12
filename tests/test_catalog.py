@@ -4,6 +4,7 @@ import unittest
 
 from motor_magia.catalog import adapt_markdown_for_streamlit
 from motor_magia.licoes_extraidas import LESSONS_DATA
+from motor_magia.models import Lesson
 
 
 class CatalogTests(unittest.TestCase):
@@ -48,6 +49,43 @@ class CatalogTests(unittest.TestCase):
         self.assertIn("Leia com atenção.", adapted)
         self.assertIn("Clique em **Executar magia** várias vezes", adapted)
         self.assertNotIn("Rode o código", adapted)
+
+    def test_app_specific_lesson_edits_are_published(self) -> None:
+        lessons = {
+            lesson.lesson_id: lesson
+            for lesson in (Lesson.from_dict(item) for item in LESSONS_DATA)
+        }
+        code = {
+            cell.cell_id: cell.source
+            for lesson in lessons.values()
+            for cell in lesson.cells
+            if cell.cell_type == "code"
+        }
+
+        self.assertEqual(code["aula-1::cell-5"], 'print("escreva aqui seu nome")')
+        self.assertIn(
+            'comida_favorita = "escreva aqui sua comida favorita"',
+            code["aula-1::cell-7"],
+        )
+        self.assertNotIn(
+            "Desafio Relâmpago",
+            "\n".join(cell.source for cell in lessons["aula-4"].cells),
+        )
+        self.assertIn(
+            'pessoas = ["Maria", "José", "João"]',
+            code["aula-4::cell-12"],
+        )
+        self.assertIn("range(5)", code["aula-5::cell-6"])
+        self.assertIn("5 Geraldos", code["aula-5::cell-6"])
+        self.assertIn("numero_tabuada = 2", code["aula-5::cell-11"])
+        self.assertNotIn("aula-6::cell-7", code)
+        self.assertNotIn("aula-6::cell-8", code)
+        self.assertIn("sua_frase = input()", code["aula-6::cell-11"])
+        self.assertIn("def idade_canina(numero):", code["aula-6::cell-13"])
+        code_cell_count = sum(
+            lesson.to_dict()["code_cells"] for lesson in lessons.values()
+        )
+        self.assertEqual(code_cell_count, 30)
 
 
 if __name__ == "__main__":

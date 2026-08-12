@@ -1,6 +1,6 @@
 """Licoes extraidas automaticamente dos notebooks.
 Nao editar manualmente. Rode scripts/extrair_licoes.py.
-Gerado em: 2026-08-08 18:11:55
+Gerado em: 2026-08-12 14:44:06
 """
 
 LESSONS_DATA = [{'lesson_id': 'aula-1',
@@ -61,9 +61,9 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
             {'cell_id': 'aula-1::cell-5',
              'index': 5,
              'cell_type': 'code',
-             'source': 'print("caroline")',
+             'source': 'print("escreva aqui seu nome")',
              'requires_input': False,
-             'default_code': 'print("caroline")'},
+             'default_code': 'print("escreva aqui seu nome")'},
             {'cell_id': 'aula-1::cell-6',
              'index': 6,
              'cell_type': 'markdown',
@@ -81,13 +81,13 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
              'index': 7,
              'cell_type': 'code',
              'source': '# Criando a caixinha\n'
-                       'comida_favorita = "massa com molho de tomate"\n'
+                       'comida_favorita = "escreva aqui sua comida favorita"\n'
                        '\n'
                        '# Mandando o computador mostrar o que tem dentro da caixinha\n'
                        'print(comida_favorita)',
              'requires_input': False,
              'default_code': '# Criando a caixinha\n'
-                             'comida_favorita = "massa com molho de tomate"\n'
+                             'comida_favorita = "escreva aqui sua comida favorita"\n'
                              '\n'
                              '# Mandando o computador mostrar o que tem dentro da caixinha\n'
                              'print(comida_favorita)'},
@@ -577,9 +577,9 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
   'order': 4,
   'title': '📦 Aula 4: Listas Encantadas',
   'notebook_file': 'minha_quarta_aula.ipynb',
-  'total_cells': 12,
+  'total_cells': 11,
   'code_cells': 5,
-  'markdown_cells': 7,
+  'markdown_cells': 6,
   'cells': [{'cell_id': 'aula-4::cell-1',
              'index': 1,
              'cell_type': 'markdown',
@@ -663,14 +663,6 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
                              '\n'
                              'print("A fruta número 2 é:")\n'
                              'print(frutas[2])'},
-            {'cell_id': 'aula-4::cell-6',
-             'index': 6,
-             'cell_type': 'markdown',
-             'source': '### ⚡ Desafio Relâmpago!\n'
-                       'No código acima, tente mudar o número dentro do `[ ]` para **2** e veja '
-                       'qual fruta aparece!',
-             'requires_input': False,
-             'default_code': None},
             {'cell_id': 'aula-4::cell-7',
              'index': 7,
              'cell_type': 'markdown',
@@ -777,12 +769,16 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
             {'cell_id': 'aula-4::cell-12',
              'index': 12,
              'cell_type': 'code',
-             'source': 'pessoas = ["Michele", "Fernando", "Carol"]\n'
+             'source': 'import random\n'
+                       '\n'
+                       'pessoas = ["Maria", "José", "João"]\n'
                        'escolha = random.choice(pessoas)\n'
                        'print("O computador está sorteando...")\n'
                        'print("O escolhido é: " + escolha)',
              'requires_input': False,
-             'default_code': 'pessoas = ["Michele", "Fernando", "Carol"]\n'
+             'default_code': 'import random\n'
+                             '\n'
+                             'pessoas = ["Maria", "José", "João"]\n'
                              'escolha = random.choice(pessoas)\n'
                              'print("O computador está sorteando...")\n'
                              'print("O escolhido é: " + escolha)'}]},
@@ -856,16 +852,16 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
             {'cell_id': 'aula-5::cell-6',
              'index': 6,
              'cell_type': 'code',
-             'source': 'print("Vou imprimir 20 Geraldos para você:")\n'
+             'source': 'print("Vou imprimir 5 Geraldos para você:")\n'
                        '\n'
                        '# Repita 5 vezes\n'
-                       'for numero in range(20):\n'
+                       'for numero in range(5):\n'
                        '    print("🦸\u200d♀️ Geraldo!")',
              'requires_input': False,
-             'default_code': 'print("Vou imprimir 20 Geraldos para você:")\n'
+             'default_code': 'print("Vou imprimir 5 Geraldos para você:")\n'
                              '\n'
                              '# Repita 5 vezes\n'
-                             'for numero in range(20):\n'
+                             'for numero in range(5):\n'
                              '    print("🦸\u200d♀️ Geraldo!")'},
             {'cell_id': 'aula-5::cell-7',
              'index': 7,
@@ -933,7 +929,7 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
             {'cell_id': 'aula-5::cell-11',
              'index': 11,
              'cell_type': 'code',
-             'source': 'numero_tabuada = 9\n'
+             'source': 'numero_tabuada = 2\n'
                        '\n'
                        'print("Tabuada do " + str(numero_tabuada))\n'
                        '\n'
@@ -944,7 +940,7 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
                        '    print(str(numero_tabuada) + " vezes " + str(contador) + " é igual a: " '
                        '+ str(resultado))',
              'requires_input': False,
-             'default_code': 'numero_tabuada = 9\n'
+             'default_code': 'numero_tabuada = 2\n'
                              '\n'
                              'print("Tabuada do " + str(numero_tabuada))\n'
                              '\n'
@@ -958,8 +954,8 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
   'order': 6,
   'title': '🛠️ Aula 6: Mini Projetos',
   'notebook_file': 'minha_sexta_aula.ipynb',
-  'total_cells': 12,
-  'code_cells': 5,
+  'total_cells': 11,
+  'code_cells': 4,
   'markdown_cells': 7,
   'cells': [{'cell_id': 'aula-6::cell-1',
              'index': 1,
@@ -1059,20 +1055,6 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
                              'dar_oi_especial("Mamãe")\n'
                              'dar_oi_especial("Papai")\n'
                              'dar_oi_especial("Vovó")'},
-            {'cell_id': 'aula-6::cell-7',
-             'index': 7,
-             'cell_type': 'code',
-             'source': 'def dar_oi_especial2(nome, letra):\n'
-                       '    print("✨ Olá, " + nome + "! Seja bem-vind" + letra + "! ✨")',
-             'requires_input': False,
-             'default_code': 'def dar_oi_especial2(nome, letra):\n'
-                             '    print("✨ Olá, " + nome + "! Seja bem-vind" + letra + "! ✨")'},
-            {'cell_id': 'aula-6::cell-8',
-             'index': 8,
-             'cell_type': 'code',
-             'source': 'dar_oi_especial2("bolsa", "a")',
-             'requires_input': False,
-             'default_code': 'dar_oi_especial2("bolsa", "a")'},
             {'cell_id': 'aula-6::cell-9',
              'index': 9,
              'cell_type': 'markdown',
@@ -1108,7 +1090,7 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
                        'enfeitar("MINHA FAMÍLIA É LEGAL")\n'
                        '\n'
                        '# Podemos até usar input junto!\n'
-                       'sua_frase = input("Escreva algo para enfeitar: ")\n'
+                       'sua_frase = input()\n'
                        'enfeitar(sua_frase)',
              'requires_input': True,
              'default_code': '# Criando a função (A Receita)\n'
@@ -1123,7 +1105,7 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
                              'enfeitar("MINHA FAMÍLIA É LEGAL")\n'
                              '\n'
                              '# Podemos até usar input junto!\n'
-                             'sua_frase = input("Escreva algo para enfeitar: ")\n'
+                             'sua_frase = input()\n'
                              'enfeitar(sua_frase)'},
             {'cell_id': 'aula-6::cell-12',
              'index': 12,
@@ -1136,7 +1118,21 @@ LESSONS_DATA = [{'lesson_id': 'aula-1',
                        '\n'
                        '*(Dica: Dentro da função, você faz `print(numero * 7)`)*',
              'requires_input': False,
-             'default_code': None}]},
+             'default_code': None},
+            {'cell_id': 'aula-6::cell-13',
+             'index': 13,
+             'cell_type': 'code',
+             'source': 'def idade_canina(numero):\n'
+                       '    # Um ano humano vale sete anos de cachorro.\n'
+                       '    print(numero * 7)\n'
+                       '\n'
+                       'idade_canina(2)',
+             'requires_input': False,
+             'default_code': 'def idade_canina(numero):\n'
+                             '    # Um ano humano vale sete anos de cachorro.\n'
+                             '    print(numero * 7)\n'
+                             '\n'
+                             'idade_canina(2)'}]},
  {'lesson_id': 'aula-7',
   'order': 7,
   'title': '🏆 Aula 7: Desafios Finais',

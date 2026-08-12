@@ -400,6 +400,7 @@ def bootstrap_session_state(lessons: list[Lesson]) -> None:
         "notes": dict,
         "lesson_status": dict,
         "completed_cells": dict,
+        "interactive_sessions": dict,
         "selected_lesson_id": lambda: first_lesson_id,
         "import_digest": lambda: "",
         "flash_message": lambda: "",
@@ -548,22 +549,343 @@ def execute_code_cell(
     raw_inputs: str = "",
 ) -> bool:
     """Execute one code cell and return whether its progress changed."""
+    result = execute_sandbox_code(
+        lesson=lesson,
+        cell=cell,
+        code=code,
+        raw_inputs=raw_inputs,
+    )
+    return not result.get("error") and register_successful_cell(
+        lesson, cell.cell_id, total_lessons
+    )
+
+
+def execute_sandbox_code(
+    *,
+    lesson: Lesson,
+    cell: Any,
+    code: str,
+    raw_inputs: str = "",
+) -> dict[str, Any]:
+    """Execute code without deciding whether the laboratory is complete."""
+
     runtime: RuntimeSession = st.session_state["runtime"]
     with st.spinner("Misturando o feitiço no caldeirão seguro..."):
-        result = runtime.execute(
+        return runtime.execute(
             code=code,
             lesson_id=lesson.lesson_id,
             lesson_title=lesson.title,
             cell_id=cell.cell_id,
             raw_inputs=raw_inputs,
         )
-    return not result.get("error") and register_successful_cell(
-        lesson, cell.cell_id, total_lessons
+
+
+def interactive_input_mode(cell_id: str, code: str) -> str:
+    """Identify the lessons that need one modal per turn instead of per run."""
+
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return ""
+    if cell_id == "aula-3::cell-8" and any(
+        isinstance(node, ast.Name) and node.id == "numero_secreto"
+        for node in ast.walk(tree)
+    ):
+        return "guessing"
+    if cell_id == "aula-7::cell-7" and any(
+        isinstance(node, ast.While)
+        and isinstance(node.test, ast.Constant)
+        and node.test.value is True
+        for node in ast.walk(tree)
+    ):
+        return "tamagotchi"
+    return ""
+
+
+def guessing_bounds(code: str) -> tuple[int, int]:
+    """Read the randint limits from the editable guessing-game code."""
+
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return 1, 10
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call) or len(node.args) < 2:
+            continue
+        function = node.func
+        if not isinstance(function, ast.Attribute) or function.attr != "randint":
+            continue
+        lower, upper = node.args[:2]
+        if (
+            isinstance(lower, ast.Constant)
+            and isinstance(lower.value, int)
+            and isinstance(upper, ast.Constant)
+            and isinstance(upper.value, int)
+            and lower.value <= upper.value
+        ):
+            return int(lower.value), int(upper.value)
+    return 1, 10
+
+
+class _BreakToPass(ast.NodeTransformer):
+    def visit_Break(self, node: ast.Break) -> ast.Pass:  # noqa: N802 - API do ast
+        return ast.copy_location(ast.Pass(), node)
+
+
+def tamagotchi_turn_programs(code: str) -> tuple[str, str] | None:
+    """Turn the notebook's infinite loop into one sandboxed action per modal."""
+
+    def transformed_nodes(include_setup: bool) -> list[ast.stmt] | None:
+        try:
+            tree = ast.parse(code)
+        except SyntaxError:
+            return None
+        for position, node in enumerate(tree.body):
+            if (
+                isinstance(node, ast.While)
+                and isinstance(node.test, ast.Constant)
+                and node.test.value is True
+            ):
+                prefix = tree.body[:position] if include_setup else []
+                body = [_BreakToPass().visit(item) for item in node.body]
+                return [*prefix, *body]
+        return None
+
+    first_nodes = transformed_nodes(include_setup=True)
+    next_nodes = transformed_nodes(include_setup=False)
+    if first_nodes is None or next_nodes is None:
+        return None
+    first_tree = ast.fix_missing_locations(ast.Module(body=first_nodes, type_ignores=[]))
+    next_tree = ast.fix_missing_locations(ast.Module(body=next_nodes, type_ignores=[]))
+    return ast.unparse(first_tree), ast.unparse(next_tree)
+
+
+def append_interactive_output(
+    cell_id: str,
+    session: dict[str, Any],
+    result: dict[str, Any],
+    *,
+    remove_text: str = "",
+) -> None:
+    """Keep a visible transcript while each turn runs separately in the sandbox."""
+
+    runtime: RuntimeSession = st.session_state["runtime"]
+    latest = str(result.get("stdout", ""))
+    if remove_text:
+        latest = latest.replace(remove_text, "")
+    transcript = str(session.get("transcript", "")) + latest
+    session["transcript"] = transcript
+    result["stdout"] = transcript
+    runtime.cell_outputs[cell_id] = result
+
+
+def start_guessing_game(lesson: Lesson, cell: Any, code: str) -> bool:
+    lower, upper = guessing_bounds(code)
+    setup_code = (
+        "import random\n"
+        f"numero_secreto = random.randint({lower}, {upper})\n"
+        f'print("🤖: Estou pensando em um número de {lower} a {upper}...")'
     )
+    result = execute_sandbox_code(lesson=lesson, cell=cell, code=setup_code)
+    if result.get("error"):
+        return False
+    st.session_state["interactive_sessions"][cell.cell_id] = {
+        "kind": "guessing",
+        "transcript": str(result.get("stdout", "")),
+        "turn": 0,
+    }
+    queue_input_dialog(
+        lesson=lesson,
+        cell=cell,
+        code=code,
+        prompts=["Qual é o seu chute?"],
+        has_repeating_input=True,
+        mode="guessing",
+    )
+    return True
+
+
+def start_tamagotchi(lesson: Lesson, cell: Any, code: str) -> bool:
+    if tamagotchi_turn_programs(code) is None:
+        return False
+    st.session_state["interactive_sessions"][cell.cell_id] = {
+        "kind": "tamagotchi",
+        "transcript": "",
+        "turn": 0,
+    }
+    queue_input_dialog(
+        lesson=lesson,
+        cell=cell,
+        code=code,
+        prompts=[
+            "Que nome você quer dar ao seu bichinho?",
+            "O que você quer fazer? (1-Comer, 2-Brincar, 3-Sair)",
+        ],
+        has_repeating_input=True,
+        mode="tamagotchi",
+        phase="start",
+    )
+    return True
+
+
+def cancel_interactive_session(cell_id: str) -> None:
+    st.session_state.get("interactive_sessions", {}).pop(cell_id, None)
+    request = st.session_state.get("input_dialog_request")
+    if isinstance(request, dict) and request.get("cell_id") == cell_id:
+        st.session_state.pop("input_dialog_request", None)
+
+
+def input_labels_for_cell(cell_id: str, prompts: list[str]) -> list[str]:
+    if cell_id == "aula-6::cell-11" and prompts == ["Resposta 1"]:
+        return ["Escreva algo para enfeitar"]
+    return prompts
 
 
 def dismiss_input_dialog() -> None:
+    request = st.session_state.get("input_dialog_request")
+    if isinstance(request, dict):
+        st.session_state.get("interactive_sessions", {}).pop(request.get("cell_id"), None)
     st.session_state.pop("input_dialog_request", None)
+
+
+def render_guessing_dialog(
+    *,
+    lesson: Lesson,
+    cell: Any,
+    total_lessons: int,
+    turn: int,
+) -> None:
+    session = st.session_state["interactive_sessions"].get(cell.cell_id)
+    if not isinstance(session, dict):
+        dismiss_input_dialog()
+        return
+
+    st.caption(
+        "O número secreto permanecerá o mesmo. Envie um chute por vez até adivinhar."
+    )
+    with st.form(f"guessing_form::{cell.cell_id}::{turn}", border=False):
+        guess = st.text_input(
+            "Qual é o seu chute?",
+            key=f"input::{cell.cell_id}::guess::{turn}",
+            placeholder="Digite um número",
+        )
+        submitted = st.form_submit_button(
+            "▶ Executar magia",
+            key=f"submit::{cell.cell_id}::guess::{turn}",
+            type="primary",
+            use_container_width=True,
+        )
+
+    if not submitted:
+        return
+
+    completion_marker = "__MAGIA_NUMERO_ADIVINHADO__"
+    step_code = (
+        'chute = int(input("Qual é o seu chute? "))\n'
+        "if chute == numero_secreto:\n"
+        '    print("🎉 PARABÉNS! Você leu minha mente!")\n'
+        f'    print("{completion_marker}")\n'
+        "elif chute > numero_secreto:\n"
+        '    print("👇 Menos... Tente um número menor.")\n'
+        "else:\n"
+        '    print("👆 Mais... Tente um número maior.")'
+    )
+    result = execute_sandbox_code(
+        lesson=lesson,
+        cell=cell,
+        code=step_code,
+        raw_inputs=guess,
+    )
+    finished = completion_marker in str(result.get("stdout", ""))
+    append_interactive_output(
+        cell.cell_id,
+        session,
+        result,
+        remove_text=f"{completion_marker}\n",
+    )
+    session["turn"] = int(session.get("turn", 0)) + 1
+
+    if finished and not result.get("error"):
+        result["stdout"] = str(result.get("stdout", "")) + "Fim de jogo!\n"
+        st.session_state["runtime"].cell_outputs[cell.cell_id] = result
+        st.session_state["interactive_sessions"].pop(cell.cell_id, None)
+        st.session_state.pop("input_dialog_request", None)
+        register_successful_cell(lesson, cell.cell_id, total_lessons)
+    else:
+        request = dict(st.session_state["input_dialog_request"])
+        request["turn"] = session["turn"]
+        st.session_state["input_dialog_request"] = request
+    st.rerun()
+
+
+def render_tamagotchi_dialog(
+    *,
+    lesson: Lesson,
+    cell: Any,
+    total_lessons: int,
+    code: str,
+    phase: str,
+    turn: int,
+) -> None:
+    session = st.session_state["interactive_sessions"].get(cell.cell_id)
+    programs = tamagotchi_turn_programs(code)
+    if not isinstance(session, dict) or programs is None:
+        dismiss_input_dialog()
+        return
+
+    first_turn = phase == "start"
+    prompts = (
+        [
+            "Que nome você quer dar ao seu bichinho?",
+            "O que você quer fazer? (1-Comer, 2-Brincar, 3-Sair)",
+        ]
+        if first_turn
+        else ["O que você quer fazer? (1-Comer, 2-Brincar, 3-Sair)"]
+    )
+    st.caption(
+        "Cada ação será executada na sandbox e o bichinho manterá seu nome, fome e alegria."
+    )
+    with st.form(f"tamagotchi_form::{cell.cell_id}::{turn}", border=False):
+        answers: list[str] = []
+        for prompt_index, prompt in enumerate(prompts, start=1):
+            label = prompt if len(prompts) == 1 else f"{prompt_index}. {prompt}"
+            answers.append(
+                st.text_input(
+                    label,
+                    key=f"input::{cell.cell_id}::tamagotchi::{turn}::{prompt_index}",
+                    placeholder="Digite sua resposta aqui",
+                )
+            )
+        submitted = st.form_submit_button(
+            "▶ Executar magia",
+            key=f"submit::{cell.cell_id}::tamagotchi::{turn}",
+            type="primary",
+            use_container_width=True,
+        )
+
+    if not submitted:
+        return
+
+    action = answers[-1].strip() if answers else ""
+    result = execute_sandbox_code(
+        lesson=lesson,
+        cell=cell,
+        code=programs[0] if first_turn else programs[1],
+        raw_inputs="\n".join(answers),
+    )
+    append_interactive_output(cell.cell_id, session, result)
+    session["turn"] = int(session.get("turn", 0)) + 1
+
+    if not result.get("error") and action == "3":
+        st.session_state["interactive_sessions"].pop(cell.cell_id, None)
+        st.session_state.pop("input_dialog_request", None)
+        register_successful_cell(lesson, cell.cell_id, total_lessons)
+    else:
+        request = dict(st.session_state["input_dialog_request"])
+        request["phase"] = "action" if not result.get("error") else phase
+        request["turn"] = session["turn"]
+        st.session_state["input_dialog_request"] = request
+    st.rerun()
 
 
 @st.dialog(
@@ -579,8 +901,30 @@ def render_input_dialog(
     code: str,
     prompts: list[str],
     has_repeating_input: bool,
+    mode: str = "",
+    phase: str = "",
+    turn: int = 0,
 ) -> None:
     """Collect all detected input() answers and execute the code once."""
+    if mode == "guessing":
+        render_guessing_dialog(
+            lesson=lesson,
+            cell=cell,
+            total_lessons=total_lessons,
+            turn=turn,
+        )
+        return
+    if mode == "tamagotchi":
+        render_tamagotchi_dialog(
+            lesson=lesson,
+            cell=cell,
+            total_lessons=total_lessons,
+            code=code,
+            phase=phase,
+            turn=turn,
+        )
+        return
+
     st.caption(
         "Preencha as respostas abaixo. O código será executado somente quando você "
         "clicar em Executar magia."
@@ -637,6 +981,8 @@ def queue_input_dialog(
     code: str,
     prompts: list[str],
     has_repeating_input: bool,
+    mode: str = "",
+    phase: str = "",
 ) -> None:
     st.session_state["input_dialog_request"] = {
         "lesson_id": lesson.lesson_id,
@@ -644,6 +990,9 @@ def queue_input_dialog(
         "code": code,
         "prompts": list(prompts),
         "has_repeating_input": bool(has_repeating_input),
+        "mode": str(mode),
+        "phase": str(phase),
+        "turn": 0,
     }
 
 
@@ -675,10 +1024,18 @@ def render_pending_input_dialog(lessons: list[Lesson]) -> None:
         code=str(request.get("code", cell.default_code or cell.source)),
         prompts=[str(prompt) for prompt in request.get("prompts", [])],
         has_repeating_input=bool(request.get("has_repeating_input", False)),
+        mode=str(request.get("mode", "")),
+        phase=str(request.get("phase", "")),
+        turn=int(request.get("turn", 0)),
     )
 
 
-def render_code_cell(lesson: Lesson, cell: Any, total_lessons: int) -> None:
+def render_code_cell(
+    lesson: Lesson,
+    cell: Any,
+    total_lessons: int,
+    laboratory_number: int,
+) -> None:
     runtime: RuntimeSession = st.session_state["runtime"]
     code_key = f"code::{cell.cell_id}"
     if code_key not in st.session_state:
@@ -686,7 +1043,7 @@ def render_code_cell(lesson: Lesson, cell: Any, total_lessons: int) -> None:
 
     with st.container(border=True):
         st.markdown(
-            f'<div class="spell-label"><span class="spell-number">{cell.index}</span>'
+            f'<div class="spell-label"><span class="spell-number">{laboratory_number}</span>'
             "Laboratório de código</div>",
             unsafe_allow_html=True,
         )
@@ -698,6 +1055,7 @@ def render_code_cell(lesson: Lesson, cell: Any, total_lessons: int) -> None:
         )
 
         prompts, has_repeating_input = input_prompts(code)
+        prompts = input_labels_for_cell(cell.cell_id, prompts)
 
         run_col, restore_col, clear_col = st.columns([1.45, 1, 1])
         run_clicked = run_col.button(
@@ -706,25 +1064,35 @@ def render_code_cell(lesson: Lesson, cell: Any, total_lessons: int) -> None:
             type="primary",
             use_container_width=True,
         )
-        restore_col.button(
+        restore_clicked = restore_col.button(
             "↺ Restaurar",
             key=f"restore::{cell.cell_id}",
             on_click=reset_code_widget,
             args=(code_key, cell.default_code or cell.source),
             use_container_width=True,
         )
+        if restore_clicked:
+            cancel_interactive_session(cell.cell_id)
         if clear_col.button("🧽 Limpar", key=f"clear::{cell.cell_id}", use_container_width=True):
+            cancel_interactive_session(cell.cell_id)
             runtime.clear_cell_output(cell.cell_id)
 
         if run_clicked:
             if prompts:
-                queue_input_dialog(
-                    lesson=lesson,
-                    cell=cell,
-                    code=code,
-                    prompts=prompts,
-                    has_repeating_input=has_repeating_input,
-                )
+                mode = interactive_input_mode(cell.cell_id, code)
+                started = False
+                if mode == "guessing":
+                    started = start_guessing_game(lesson, cell, code)
+                elif mode == "tamagotchi":
+                    started = start_tamagotchi(lesson, cell, code)
+                if not started:
+                    queue_input_dialog(
+                        lesson=lesson,
+                        cell=cell,
+                        code=code,
+                        prompts=prompts,
+                        has_repeating_input=has_repeating_input,
+                    )
             elif execute_code_cell(
                 lesson=lesson,
                 cell=cell,
@@ -739,11 +1107,13 @@ def render_code_cell(lesson: Lesson, cell: Any, total_lessons: int) -> None:
 
 
 def render_lesson(lesson: Lesson, total_lessons: int) -> None:
+    laboratory_number = 0
     for cell in lesson.cells:
         if cell.cell_type == "markdown":
             st.markdown(cell.source)
         elif cell.cell_type == "code":
-            render_code_cell(lesson, cell, total_lessons)
+            laboratory_number += 1
+            render_code_cell(lesson, cell, total_lessons, laboratory_number)
 
 
 def render_sidebar(lessons: list[Lesson]) -> Lesson:

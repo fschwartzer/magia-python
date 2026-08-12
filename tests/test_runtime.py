@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib.util
 import unittest
 
-from motor_magia.runtime import RuntimeSession
+from motor_magia.runtime import RuntimeSession, worker_environment
 
 
 class RuntimeSessionTests(unittest.TestCase):
@@ -56,6 +56,18 @@ class RuntimeSessionTests(unittest.TestCase):
         recovered = self.execute("print('ambiente novo')")
         self.assertFalse(recovered["error"])
         self.assertIn("ambiente novo", recovered["stdout"])
+
+    def test_plot_worker_limits_native_math_threads(self) -> None:
+        environment = worker_environment()
+        for variable in (
+            "OPENBLAS_NUM_THREADS",
+            "OMP_NUM_THREADS",
+            "MKL_NUM_THREADS",
+            "NUMEXPR_NUM_THREADS",
+            "VECLIB_MAXIMUM_THREADS",
+            "BLIS_NUM_THREADS",
+        ):
+            self.assertEqual(environment[variable], "1")
 
     @unittest.skipUnless(importlib.util.find_spec("matplotlib"), "matplotlib não instalado")
     def test_captures_plot(self) -> None:
